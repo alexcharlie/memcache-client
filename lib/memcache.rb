@@ -252,20 +252,22 @@ class MemCache
     results = {}
 
     server_keys.each do |server, keys|
-      keys = keys.join ' '
-      values = if @multithread then
-                 threadsafe_cache_get_multi server, keys
-               else
-                 cache_get_multi server, keys
-               end
-      values.each do |key, value|
-        results[cache_keys[key]] = Marshal.load value
+      begin
+        keys = keys.join ' '
+        values = if @multithread then
+                   threadsafe_cache_get_multi server, keys
+                 else
+                   cache_get_multi server, keys
+                 end
+        values.each do |key, value|
+          results[cache_keys[key]] = Marshal.load value
+        end
+      rescue TypeError, SocketError, SystemCallError, IOError => err
+        handle_error server, err
       end
     end
-
+    
     return results
-  rescue TypeError, SocketError, SystemCallError, IOError => err
-    handle_error server, err
   end
 
   ##
